@@ -20,6 +20,7 @@ public class BodyCamMapper {
 
     public static BodyCamResponseDto toDto(BodyCam bodyCam) {
         BodyCamResponseDto bodyCamResponseDto = new BodyCamResponseDto();
+        bodyCamResponseDto.setIdBodyCam(bodyCam.getIdBodyCam());
         bodyCamResponseDto.setModelo(bodyCam.getModelo());
         bodyCamResponseDto.setNumeroDeSerie(bodyCam.getNumeroDeSerie());
         bodyCamResponseDto.setChip(bodyCam.isChip());

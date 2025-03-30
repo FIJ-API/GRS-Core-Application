@@ -1,34 +1,27 @@
 package com.grs.api.grs_api.dto;
 
-import java.time.LocalDate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-public class BodyCamResponseDto {
+public class BodyCamPutDto {
 
-    private int idBodyCam;
-
+    @NotBlank
     private String modelo;
 
+    @NotBlank
     private String numeroDeSerie;
 
+    @NotNull
     private boolean chip;
 
+    @NotBlank
     private String estado;
 
+    @NotBlank
     private String vendedor;
 
+    @NotBlank
     private String revenda;
-
-    private LocalDate saida;
-
-    private LocalDate devolucao;
-
-    public int getIdBodyCam() {
-        return idBodyCam;
-    }
-
-    public void setIdBodyCam(int idBodyCam) {
-        this.idBodyCam = idBodyCam;
-    }
 
     public String getModelo() {
         return modelo;
@@ -76,21 +69,5 @@ public class BodyCamResponseDto {
 
     public void setRevenda(String revenda) {
         this.revenda = revenda;
-    }
-
-    public LocalDate getSaida() {
-        return saida;
-    }
-
-    public void setSaida(LocalDate saida) {
-        this.saida = saida;
-    }
-
-    public LocalDate getDevolucao() {
-        return devolucao;
-    }
-
-    public void setDevolucao(Integer diasAVencer) {
-        this.devolucao = saida.plusDays(diasAVencer);
     }
 }
