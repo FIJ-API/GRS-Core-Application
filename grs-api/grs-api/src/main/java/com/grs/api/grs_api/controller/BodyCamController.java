@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -39,6 +40,11 @@ public class BodyCamController {
     @PutMapping("/{idBodyCam}")
     public ResponseEntity<BodyCamResponseDto> atualizar(@NotNull @PathVariable int idBodyCam, @Valid @RequestBody BodyCamPutDto bodyCamPutDto) {
         return ResponseEntity.status(200).body(service.atualizar(idBodyCam, bodyCamPutDto));
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadExcel(@RequestBody MultipartFile file) {
+        return ResponseEntity.status(201).body(service.upload(file));
     }
 
 }
