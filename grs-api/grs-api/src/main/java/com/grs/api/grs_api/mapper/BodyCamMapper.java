@@ -6,6 +6,9 @@ import com.grs.api.grs_api.entity.BodyCam;
 
 public class BodyCamMapper {
     public static BodyCam toEntity(BodyCamRequestDto bodyCamRequestDto) {
+
+        if (bodyCamRequestDto == null) return null;
+
         BodyCam bodyCam = new BodyCam();
         bodyCam.setModelo(bodyCamRequestDto.getModelo());
         bodyCam.setNumeroDeSerie(bodyCamRequestDto.getNumeroDeSerie());
@@ -19,6 +22,9 @@ public class BodyCamMapper {
     }
 
     public static BodyCamResponseDto toDto(BodyCam bodyCam) {
+
+        if (bodyCam == null) return null;
+
         BodyCamResponseDto bodyCamResponseDto = new BodyCamResponseDto();
         bodyCamResponseDto.setIdBodyCam(bodyCam.getIdBodyCam());
         bodyCamResponseDto.setModelo(bodyCam.getModelo());

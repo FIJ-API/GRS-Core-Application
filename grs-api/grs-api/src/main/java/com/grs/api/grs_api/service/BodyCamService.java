@@ -10,11 +10,13 @@ import jakarta.validation.constraints.NotNull;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +27,8 @@ public class BodyCamService {
     private BodyCamRepository repository;
 
     public BodyCamResponseDto cadastrar(BodyCamRequestDto bodyCamRequestDto) {
-        if (repository.existsByNumeroDeSerie(bodyCamRequestDto.getNumeroDeSerie())) throw new NumeroDeSerieJaCadastradoException("Número de série '%s' já cadastrado".formatted(bodyCamRequestDto.getNumeroDeSerie()));
+        if (repository.existsByNumeroDeSerie(bodyCamRequestDto.getNumeroDeSerie()))
+            throw new NumeroDeSerieJaCadastradoException("Número de série '%s' já cadastrado".formatted(bodyCamRequestDto.getNumeroDeSerie()));
         return repository.insertInto(bodyCamRequestDto);
     }
 
@@ -48,7 +51,9 @@ public class BodyCamService {
         if (file.isEmpty()) throw new EntidadeRequisicaoFalhaException("Arquivo vazio");
         try {
             List<BodyCamRequestDto> bodyCamsList = processarExcel(file);
-            return "Arquivo Excel processado com sucesso! Usuários criados: " + bodyCamsList.size();
+            return """
+                    Arquivo Excel processado com sucesso! 
+                    Usuários criados: %d.""".formatted(bodyCamsList.size());
         } catch (Exception e) {
             System.out.println(e);
             throw new EntidadeNaoEncontradaException("Erro ao processar o arquivo: " + e.getMessage());
@@ -61,7 +66,7 @@ public class BodyCamService {
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-            Sheet sheet = workbook.getSheetAt(0); // Obtém a primeira aba
+            Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
             boolean primeiraLinha = true;
             List<String> colunas = new ArrayList<>();
@@ -69,50 +74,60 @@ public class BodyCamService {
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
+                if (isRowEmpty(row)) continue;
+
                 if (primeiraLinha) {
                     for (Cell cell : row) {
                         colunas.add(cell.getStringCellValue());
                     }
                     primeiraLinha = false;
+                    System.out.println(colunas);
                 } else {
                     BodyCamRequestDto bodyCamRequestDto = new BodyCamRequestDto();
+                    boolean numeroDeSerieVazio = false;
 
-                    for (int i = 0; i < colunas.size(); i++) {
-                        Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    for (int colunaAtual = 0; colunaAtual < 7; colunaAtual++) {
+                        Cell cell = row.getCell(colunaAtual, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        String valorColuna = colunas.get(colunaAtual);
+                        if (valorColuna.equals("Número de Série")) {
+                            if (cell.getCellType() == CellType.BLANK ||
+                                    (cell.getCellType() == CellType.STRING && cell.getStringCellValue().trim().isEmpty())) {
+                                numeroDeSerieVazio = true;
+                                break;
+                            }
+                        }
 
-                        switch (colunas.get(i)) {
+                        switch (valorColuna) {
+                            case "Número de Série":
+                                if (cell.getCellType() == CellType.STRING)
+                                    bodyCamRequestDto.setNumeroDeSerie(cell.getStringCellValue());
+                                else if (cell.getCellType() == CellType.NUMERIC)
+                                    bodyCamRequestDto.setNumeroDeSerie(String.valueOf(cell.getNumericCellValue()));
+                                else {
+                                    continue;
+                                }
+                                break;
+
                             case "Modelo":
                                 bodyCamRequestDto.setModelo(cell.getStringCellValue());
                                 break;
-                            case "NumeroSerie":
-                                if (cell.getCellType() == CellType.STRING) {
-                                    bodyCamRequestDto.setNumeroDeSerie(cell.getStringCellValue());
-                                } else if (cell.getCellType() == CellType.NUMERIC) {
-                                    // Se for numérico, converta para string
-                                    bodyCamRequestDto.setNumeroDeSerie(String.valueOf(cell.getNumericCellValue()));
-                                } else {
-                                    bodyCamRequestDto.setNumeroDeSerie(""); // Valor padrão caso a célula esteja vazia ou com formato inesperado
-                                }
-                                break;
+
                             case "CHIP":
-                                if (cell.getCellType() == CellType.BOOLEAN) {
+                                if (cell.getCellType() == CellType.BOOLEAN)
                                     bodyCamRequestDto.setChip(cell.getBooleanCellValue());
-                                } else if (cell.getCellType() == CellType.STRING) {
+                                else if (cell.getCellType() == CellType.STRING)
                                     bodyCamRequestDto.setChip(cell.getStringCellValue().equalsIgnoreCase("sim") || cell.getStringCellValue().equalsIgnoreCase("true"));
-                                } else {
-                                    bodyCamRequestDto.setChip(false);
-                                }
+                                else bodyCamRequestDto.setChip(false);
                                 break;
+
                             case "Estado":
-                                if (cell.getCellType() == CellType.STRING) {
+                                if (cell.getCellType() == CellType.STRING)
                                     bodyCamRequestDto.setEstado(cell.getStringCellValue());
-                                } else if (cell.getCellType() == CellType.NUMERIC) {
-                                    // Se for numérico, converta para string
+                                else if (cell.getCellType() == CellType.NUMERIC)
                                     bodyCamRequestDto.setEstado(String.valueOf(cell.getNumericCellValue()));
-                                } else {
-                                    bodyCamRequestDto.setEstado(""); // Valor padrão caso a célula esteja vazia ou com formato inesperado
-                                }
+                                else bodyCamRequestDto.setEstado("N/A");
                                 break;
+
                             case "Vendedor":
                                 bodyCamRequestDto.setVendedor(cell.getStringCellValue());
                                 break;
@@ -120,27 +135,34 @@ public class BodyCamService {
                                 bodyCamRequestDto.setRevenda(cell.getStringCellValue());
                                 break;
                             case "Dias a Vencer":
-                                if (cell.getCellType() == CellType.NUMERIC) {
+                                if (cell.getCellType() == CellType.NUMERIC)
                                     bodyCamRequestDto.setDiasAVencer((int) cell.getNumericCellValue());
-                                } else if (cell.getCellType() == CellType.STRING) {
+                                else if (cell.getCellType() == CellType.STRING) {
                                     try {
                                         bodyCamRequestDto.setDiasAVencer(Integer.parseInt(cell.getStringCellValue()));
                                     } catch (NumberFormatException e) {
-                                        bodyCamRequestDto.setDiasAVencer(0); // Exemplo de valor padrão
+                                        bodyCamRequestDto.setDiasAVencer(0);
                                     }
-                                } else {
-                                    bodyCamRequestDto.setDiasAVencer(0); // Exemplo de valor padrão
-                                }
+                                } else bodyCamRequestDto.setDiasAVencer(0);
                                 break;
                         }
-
                     }
-
-                    bodyCamRequestDtos.add(bodyCamRequestDto);
+                    if (numeroDeSerieVazio) continue;
+                        bodyCamRequestDtos.add(bodyCamRequestDto);
                     cadastrar(bodyCamRequestDto);
                 }
             }
         }
         return bodyCamRequestDtos;
+    }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null) return true;
+
+        for (int i = 0; i < row.getLastCellNum(); i++) {
+            Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+            if (cell.getCellType() != CellType.BLANK) return false;
+        }
+        return true;
     }
 }

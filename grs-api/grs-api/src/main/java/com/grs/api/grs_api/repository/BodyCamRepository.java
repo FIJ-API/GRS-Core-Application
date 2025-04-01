@@ -8,7 +8,6 @@ import com.grs.api.grs_api.exception.EntidadeNaoEncontradaException;
 import com.grs.api.grs_api.exception.EntidadeRequisicaoFalhaException;
 import com.grs.api.grs_api.exception.NumeroDeSerieJaCadastradoException;
 import com.grs.api.grs_api.mapper.BodyCamMapper;
-import com.grs.api.grs_api.service.BodyCamService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -101,8 +100,8 @@ public class BodyCamRepository {
     public void existsByNumeroDeSerieAndIdNot(int idBodyCam, String numeroDeSerie) {
         if (this.jdbcClient
                 .sql("SELECT 1 FROM bodycam WHERE numeroDeSerie = ? AND idBodyCam != ?")
-                .param(idBodyCam)
                 .param(numeroDeSerie)
+                .param(idBodyCam)
                 .query(Integer.class)
                 .optional()
                 .isPresent()) throw new NumeroDeSerieJaCadastradoException("Número de série '%s' já cadastrado".formatted(numeroDeSerie));
